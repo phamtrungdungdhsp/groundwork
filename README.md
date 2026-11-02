@@ -2,13 +2,22 @@
 
 A personal Claude Code skill kit for programming work — built to replace the `superpowers` plugin.
 
-Five skills, chained together:
+Five skills chained together, plus two standalone skills you run on demand.
+
+## The chain
 
 - `feature-development` — entry point. Figures out whether a request is new work or a continuation of something already in progress, then routes into the rest.
 - `discovery` — clarifies an ambiguous request: confirms where to look for missing context, then reports back a plain-English mental model before any technical detail.
 - `writing-plans` — turns an understood problem into a short plan (`plans/<timestamp>-<slug>.md`): overview, goal, assumptions, per-task goal/contract/workflow, out of scope.
 - `writing-test-plan` — turns an approved plan into a plain-English test plan (`plans/<timestamp>-<slug>-test-plan.md`), one concrete step-by-step scenario per test case.
 - `test-driven-development` — implements from the test plan: red → green → refactor, tests traceable to test-plan IDs, code placed in the right architectural layer (business vs infrastructure), with a checklist for concurrency/scale correctness (N+1, race conditions, atomicity, consistency, idempotency, timeouts, unbounded queries, authorization).
+
+## On demand
+
+These aren't part of the chain and Claude won't start them by itself. Run them when you need them:
+
+- `/groundwork:course-correct` — carries a small correction through every layer it touches (plan, test plan, tests, then code), so they all still agree without restarting the whole process.
+- `/groundwork:role-play-testing` — plays the system's real actors against a running local or staging system, then writes a findings report (`role-play-reports/<timestamp>-<slug>.md`). It reports only and never fixes anything.
 
 ## Install on a new machine
 
@@ -41,6 +50,8 @@ plugins/groundwork/
     writing-plans/SKILL.md
     writing-test-plan/SKILL.md
     test-driven-development/SKILL.md
+    course-correct/SKILL.md
+    role-play-testing/SKILL.md
 ```
 
 To add a new skill to the kit later: create `plugins/groundwork/skills/<name>/SKILL.md`, bump the `version` in `plugins/groundwork/.claude-plugin/plugin.json`, commit, push, and run the update commands above on each machine.
