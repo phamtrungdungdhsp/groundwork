@@ -9,7 +9,7 @@
       "name": "groundwork",
       "source": "./plugins/groundwork",
       "description": "Discovery -> writing-plans -> writing-test-plan -> test-driven-development workflow for programming, entry point feature-development",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }

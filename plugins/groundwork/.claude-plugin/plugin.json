@@ -1,7 +1,7 @@
 {
   "name": "groundwork",
   "displayName": "Groundwork",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Discovery, planning, test-plan, and TDD workflow for programming — a personal replacement for the superpowers plugin.",
   "author": {
     "name": "Dũng"
