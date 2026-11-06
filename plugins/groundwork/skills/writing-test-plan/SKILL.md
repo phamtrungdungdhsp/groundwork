@@ -59,7 +59,38 @@ Number test cases `<task number>.<test number>` so they can be referenced unambi
 
 For each task, cover at minimum: the happy path (the thing working as intended), and any edge or error case that the task's Goal, Contract, or Workflow implies matters. A task with a Contract almost always needs one test case per distinct response in that contract — if the contract says "409 if a retry is already pending," that's its own error-case test, not a footnote on the happy-path test. A task with no Contract still needs at least the happy path, plus whatever edge cases are obvious from its Goal.
 
-Don't pad the list with test cases that don't correspond to anything in the task — every test case should trace back to something the Goal, Contract, or Workflow actually implies needs to hold.
+Group cases that share a scenario as described in "Keeping the list short" below. Don't pad the list with test cases that don't correspond to anything in the task — every test case should trace back to something the Goal, Contract, or Workflow actually implies needs to hold.
+
+### Keeping the list short: merge by shared scenario
+
+A test plan with a hundred near-identical cases is exhausting to review, and the reviewer ends up skimming — which defeats the point. Merge cases that are really one scenario seen from several angles, so the list stays short without dropping coverage.
+
+**Variation table.** If cases share the same setup and the same action, and differ only in the input used and the expected result, write one test case with a table instead of one case per input:
+
+```markdown
+### 2.3 Rejects invalid payment amounts
+**Type:** error case
+**Covers:** Contract, 400 responses
+**Workflow:**
+1. Open a payment that is eligible for retry.
+2. Submit the retry using each amount below.
+3. Result: each submission is rejected with the stated response, and nothing is scheduled.
+
+| Amount | Expected response |
+|--------|-------------------|
+| zero | 400, "amount must be positive" |
+| negative | 400, "amount must be positive" |
+| missing | 400, "amount required" |
+```
+
+**Several checks on one outcome.** If a single action has several observable effects (the response, the stored record, an email, an audit entry), use one test case whose `Result:` lists each effect, rather than one case per effect.
+
+**Rule of thumb.** If two cases would differ only in the values typed in or the field checked, they are rows or result items of one case. If they differ in what must be set up first, or in which response the Contract promises, they are separate cases. Also keep separate: security cases, concurrency/duplicate-call cases, and anything where you'd want to know exactly which one failed.
+
+**Safeguards so merging doesn't hide gaps:**
+- Every row still needs its own specific expected result. "Rejected" or "works" is not enough.
+- Add a `**Covers:**` line to a merged case saying what it covers (e.g. "Contract, 400 responses"), so the reviewer can check coverage without reading every row.
+- Number the case as usual (`2.3`). A row is referred to as "2.3, row 2".
 
 ### Writing a test case's Workflow
 

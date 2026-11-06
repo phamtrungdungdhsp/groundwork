@@ -1,6 +1,6 @@
 ---
 name: writing-plans
-description: Use this once the problem is understood (typically right after a discovery/mental-model step) and it's time to turn it into a concrete plan before writing any code. Produces a short, plain-English plan file — overview, goals, a task breakdown with a goal and workflow per task, and an explicit out-of-scope list — saved to plans/ so it can be reviewed and later followed by an execution step. Trigger for "let's plan this out", "break this into tasks", "write a plan for X", or any multi-step coding work about to start. Do NOT use for a single, obvious, one-step change — planning ceremony for a one-line fix just adds friction.
+description: Use this once the problem is understood (typically right after a discovery/mental-model step) and it's time to turn it into a concrete plan before writing any code. Produces a short, plain-English plan file — overview, goals, a single list of database changes (when there are any) mapped to the tasks that need them, a task breakdown with a goal and workflow per task, and an explicit out-of-scope list — saved to plans/ so it can be reviewed and later followed by an execution step. Trigger for "let's plan this out", "break this into tasks", "write a plan for X", or any multi-step coding work about to start. Do NOT use for a single, obvious, one-step change — planning ceremony for a one-line fix just adds friction.
 ---
 
 # Writing Plans
@@ -30,10 +30,21 @@ The overall outcome this plan needs to achieve. What does "done" look like, desc
 Things this plan takes for granted — if one of these turns out to be false, the plan itself needs to change, not just a task. Skip this section entirely if there's genuinely nothing to flag.
 - ...
 
+## Database changes
+(only when the plan changes the database; skip entirely otherwise) Every schema change in the plan, in one place.
+
+| # | Change | Needed by |
+|---|--------|-----------|
+| D1 | What changes (new table / new column / index...) and what it holds, in plain English. | Task N (creates it), Task M (reads it), ... |
+
+**Existing data:** whether current rows are safe, and whether anything needs backfilling.
+**Order of migration:** which changes must land together or before others.
+
 ## Tasks
 
 ### Task 1: <short task name>
 **Goal:** what this specific task achieves on its own.
+**Database:** (only when this task touches a change listed above) the D-numbers, each marked creates / reads / writes / relies on.
 **Contract:** (only when this task creates or changes something other code/people will call) the input/output shape of that boundary.
 **Workflow:**
 1. First plain-English step of what gets built/changed.
@@ -49,11 +60,22 @@ Things this plan takes for granted — if one of these turns out to be false, th
 - Things this plan deliberately does not cover, so no one — human or AI — quietly wanders into them mid-execution.
 ```
 
-List tasks in the order they should be done — the order in the list *is* the execution order, no separate dependency diagram needed.
+List tasks in the order they should be done — the order in the list *is* the execution order, no separate dependency diagram needed. When the plan changes the database, the schema task comes first.
 
 ### Writing Assumptions
 
 An assumption is something the plan is relying on without verifying — "the auth service already returns a stable user ID", "this only needs to handle USD". These aren't goals and they aren't tasks; they're the ground the plan is standing on. Write them down because if one is wrong, it's cheaper to find out now, from a five-second read, than after several tasks are built on top of it. Most plans only have one or two, if any — don't manufacture assumptions just to fill the section, and skip it entirely when there's nothing worth flagging.
+
+### Writing Database changes
+
+Database changes are the thing most easily lost in a plan: they get mentioned in whichever task happens to need them, so nobody can see the whole schema picture without reading every task. Gather them into the **Database changes** section so a reader can see all of them at once and see which tasks depend on each one.
+
+- Give each change an ID (D1, D2, ...) and list which tasks create, read, write, or rely on it. Each task that touches a change repeats the IDs on its own `Database:` line, so the link can be read from either side. The two must agree.
+- **Put all schema changes in one early task, normally Task 1.** The schema is the foundation the other tasks build on; once it exists, tasks that don't depend on each other can be built in parallel. Don't scatter migrations into the tasks that first use them. Task 1 is the only task that *creates* a D-number.
+- Always say what happens to existing data (safe as-is, needs a default, needs a backfill). This is the part that is risky and easiest to skip.
+- Data-only work, such as backfills or seed data, is not a schema change but belongs in the same section if the plan needs it.
+- Describe the change in plain English: what it holds and why. Column types and SQL belong to execution, not the plan.
+- If the plan makes no database changes, leave the section and the `Database:` lines out entirely.
 
 ### Writing a task's Contract
 
