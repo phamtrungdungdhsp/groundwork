@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "groundwork",
+  "version": "0.3.0",
+  "description": "Discovery, planning, test-plan, and TDD workflow for programming — a personal replacement for the superpowers plugin.",
+  "author": {
+    "name": "Dũng"
+  },
+  "repository": "https://github.com/phamtrungdungdhsp/groundwork",
+  "license": "MIT",
+  "keywords": ["tdd", "planning", "clean-architecture", "workflow"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Groundwork",
+        "shortDescription": "Discovery, planning, test-plan and TDD workflow",
+        "developerName": "Dũng",
+        "category": "Coding",
+        "capabilities": ["Read", "Write"]
+      }
+    }
+  }
+}

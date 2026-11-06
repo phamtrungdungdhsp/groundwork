@@ -1,6 +1,6 @@
 # groundwork
 
-A personal Claude Code skill kit for programming work — built to replace the `superpowers` plugin.
+A personal Claude Code and Codex skill kit for programming work — built to replace the `superpowers` plugin.
 
 Five skills chained together, plus two standalone skills you run on demand.
 
@@ -21,29 +21,48 @@ These aren't part of the chain and Claude won't start them by itself. Run them w
 
 ## Install on a new machine
 
+### Claude Code
+
 ```bash
 # one-time per machine
 /plugin marketplace add git@github.com:phamtrungdungdhsp/groundwork.git
 /plugin install groundwork@groundwork
 ```
 
+### Codex
+
+```bash
+# one-time per machine
+codex plugin marketplace add phamtrungdungdhsp/groundwork
+```
+
+Then open the Plugins directory in the Codex desktop app, choose the `groundwork` marketplace and install `groundwork`.
+
+The skills are shared: both tools read the same `plugins/groundwork/skills/` folder. Keep skill text tool-neutral (don't name Claude-only tools such as `AskUserQuestion` or the `Skill` tool). `disable-model-invocation` in the frontmatter of the on-demand skills is a Claude Code setting that Codex may ignore.
+
 ## Update after editing a skill
 
 Push your changes to the git remote, then on each machine:
 
 ```bash
+# Claude Code
 /plugin marketplace update groundwork
 /plugin update groundwork
+
+# Codex
+codex plugin marketplace upgrade
 ```
 
-(exact update subcommands may vary by Claude Code version — check `/plugin help` if these don't match)
+(exact update subcommands may vary by version — check `/plugin help` or `codex plugin marketplace --help` if these don't match)
 
 ## Repo layout
 
 ```
-.claude-plugin/marketplace.json   <- lists the plugin below
+.claude-plugin/marketplace.json   <- Claude: lists the plugin below
+.agents/plugins/marketplace.json  <- Codex: lists the plugin below
 plugins/groundwork/
-  .claude-plugin/plugin.json
+  .claude-plugin/plugin.json      <- Claude manifest
+  plugin.json                     <- Codex manifest
   skills/
     feature-development/SKILL.md
     discovery/SKILL.md
@@ -54,4 +73,4 @@ plugins/groundwork/
     role-play-testing/SKILL.md
 ```
 
-To add a new skill to the kit later: create `plugins/groundwork/skills/<name>/SKILL.md`, bump the `version` in `plugins/groundwork/.claude-plugin/plugin.json`, commit, push, and run the update commands above on each machine.
+To add a new skill to the kit later: create `plugins/groundwork/skills/<name>/SKILL.md`, bump the `version` in `plugins/groundwork/.claude-plugin/plugin.json`, `plugins/groundwork/plugin.json` and `.claude-plugin/marketplace.json` (keep all three equal), commit, push, and run the update commands above on each machine.
