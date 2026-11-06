@@ -90,12 +90,17 @@ A few sentences: overall, could these actors get done what they came for? What's
 
 ### F1: <short description of the problem>
 **Severity:** high / medium / low
+
 **Type:** bug / gap / usability
+
 **Actor:** <who hit this>
+
 **Steps:**
 1. <what they did, specific enough to reproduce>
 2. ...
+
 **Expected:** <what this actor should have gotten>
+
 **Actual:** <what happened, with the exact message, status, or state>
 
 ### F2: ...

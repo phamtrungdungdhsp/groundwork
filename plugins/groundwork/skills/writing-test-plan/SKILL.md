@@ -29,7 +29,9 @@ Plan: plans/<same-timestamp>-<same-slug>.md
 
 ### 1.1 <short test case title>
 <one-line description of what this test case is checking>
+
 **Type:** happy path
+
 **Workflow:**
 1. <setup or action, in plain English>
 2. <next action>
@@ -39,6 +41,7 @@ Plan: plans/<same-timestamp>-<same-slug>.md
 ### 1.2 <short test case title>
 ...
 **Type:** edge case
+
 **Workflow:**
 1. ...
 Result: ...
@@ -48,10 +51,13 @@ Result: ...
 ### 2.1 <short test case title>
 ...
 **Type:** error case
+
 **Workflow:**
 1. ...
 Result: ...
 ```
+
+**Formatting:** put a blank line between every field (`**Type:**`, `**Covers:**`, `**Workflow:**`, ...) and before/after each list or table. Markdown joins consecutive lines into one paragraph, so fields written on adjacent lines render run together on one line.
 
 Number test cases `<task number>.<test number>` so they can be referenced unambiguously later (e.g. "test 2.1 is still failing"). `Result:` is always the last line of the Workflow, never a separate field — reading the whole numbered list top to bottom should feel like one continuous scenario ending in an outcome, not a setup paragraph followed by a separate verdict.
 
@@ -70,7 +76,9 @@ A test plan with a hundred near-identical cases is exhausting to review, and the
 ```markdown
 ### 2.3 Rejects invalid payment amounts
 **Type:** error case
+
 **Covers:** Contract, 400 responses
+
 **Workflow:**
 1. Open a payment that is eligible for retry.
 2. Submit the retry using each amount below.

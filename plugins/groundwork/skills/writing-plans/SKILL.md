@@ -38,14 +38,18 @@ Things this plan takes for granted — if one of these turns out to be false, th
 | D1 | What changes (new table / new column / index...) and what it holds, in plain English. | Task N (creates it), Task M (reads it), ... |
 
 **Existing data:** whether current rows are safe, and whether anything needs backfilling.
+
 **Order of migration:** which changes must land together or before others.
 
 ## Tasks
 
 ### Task 1: <short task name>
 **Goal:** what this specific task achieves on its own.
+
 **Database:** (only when this task touches a change listed above) the D-numbers, each marked creates / reads / writes / relies on.
+
 **Contract:** (only when this task creates or changes something other code/people will call) the input/output shape of that boundary.
+
 **Workflow:**
 1. First plain-English step of what gets built/changed.
 2. Next step, in the order it should happen.
@@ -53,12 +57,15 @@ Things this plan takes for granted — if one of these turns out to be false, th
 
 ### Task 2: <short task name>
 **Goal:** ...
+
 **Workflow:**
 1. ...
 
 ## Out of scope
 - Things this plan deliberately does not cover, so no one — human or AI — quietly wanders into them mid-execution.
 ```
+
+**Formatting:** put a blank line between every field (`**Type:**`, `**Covers:**`, `**Workflow:**`, ...) and before/after each list or table. Markdown joins consecutive lines into one paragraph, so fields written on adjacent lines render run together on one line.
 
 List tasks in the order they should be done — the order in the list *is* the execution order, no separate dependency diagram needed. When the plan changes the database, the schema task comes first.
 
