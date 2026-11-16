@@ -1,6 +1,6 @@
 ---
 name: course-correct
-description: Make a small correction to work that already has a plan, test plan, or code, without restarting the whole planning process. Carries one change through every layer it touches, in order - plan, then test plan, then tests, then code - so they all still agree afterwards. Run on demand, for when something in the plan turned out to be wrong, or the code doesn't do what the plan says.
+description: Make a small correction to work that already has a plan, test plan, or code, without restarting the whole planning process. Writes a new, short correction plan and correction test plan that point back to the originals and describe only what changes, leaves the original files untouched, then follows the same flow as feature-development - the user approves the plan, then the test plan, and implementation and verification run on their own. Run on demand, for when something in the plan turned out to be wrong, or the code doesn't do what the plan says.
 disable-model-invocation: true
 ---
 
@@ -8,82 +8,135 @@ disable-model-invocation: true
 
 ## What this is for
 
-Sometimes you realize mid-build or after it that something is wrong: a rule in the plan was mistaken, a case was missed, or the code doesn't do what the plan says. Writing a new plan and starting over is far too heavy for that. Just editing the code is too light, because the plan and test plan now describe something the code no longer does, and the next person (or AI) to read them will trust the wrong one.
+Sometimes you realize mid-build or after it that something is wrong: a rule in the plan was mistaken, a case was missed, or the code doesn't do what the plan says. Writing a full new plan and starting over is far too heavy for that. Just editing the code is too light, because the plan and test plan now describe something the code no longer does.
 
-This skill is the middle path: one correction, carried through every layer it touches, from the top down. When it's finished, the plan, test plan, tests, and code all agree again.
+Editing the old plan in place is also a poor answer: nobody can tell afterwards what was changed, when, or why. So this skill leaves the original plan and test plan exactly as they are and writes a **correction plan** and a **correction test plan** next to them. Each points back to the original and contains only what changes. The history is then a chain of files that can be read in order, and the correction goes through the same review and build flow as any other work.
 
 ## Step 1 — Find what exists
 
-Find the plan and test plan for this work in `plans/`, matching on topic rather than recency. If more than one could match, ask which one.
+Find the original plan and test plan for this work in `plans/`, matching on topic rather than recency. If one of them has a `Corrects:` line, or a later file corrects it, follow the chain to the newest correction, because that is the current truth. If more than one chain could match, ask which one.
 
-If there's no plan or test plan, say so and carry on with the layers that do exist. Don't write a plan or test plan just to have something to edit.
+If there is no plan at all, there's nothing to correct. Say so and suggest `feature-development` instead. Don't write a correction against nothing.
+
+Check whether the work has a `-verification.md` file, and which tasks it shows as built and verified.
 
 ## Step 2 — Work out what kind of correction this is
 
-The kind of correction decides where the change starts:
+The kind of correction decides what the correction plan says:
 
-- **The plan is wrong** — it says the wrong thing or misses something it should have covered. Start at the plan and go through every layer.
-- **The plan is right, the code is wrong** — this is a bug. Leave the plan alone. If no test case catches the bug, that's the real gap, so start at the test plan.
-- **The test plan is wrong** — the plan and code are right, but a test case expects the wrong thing. Start at the test plan. If the code already behaves correctly, there's no code to change.
+- **The plan is wrong** — it says the wrong thing or misses something it should have covered. The correction plan states the new truth for those parts.
+- **The plan is right, the code is wrong** — this is a bug. The correction plan says the original stays valid and the work is bringing the code in line. If no test case catches the bug, that's the real gap, and the correction test plan adds the missing case.
+- **The test plan is wrong** — the plan and code are right, but a test case expects the wrong thing. The correction test plan replaces that case. The correction plan can be a few lines saying nothing in the original plan changes.
 
-Then trace what the correction touches: which tasks, Contracts, and test-plan IDs, and whether those tasks have been implemented yet. A task that hasn't been built only needs its plan and test plan edited. There's no code to change yet.
+Then trace what the correction touches: which original tasks, Contracts, Approaches, and test-plan IDs, and whether those tasks have been built.
 
 ## Step 3 — Check it's actually small
 
 This skill suits a correction that stays contained. It's probably too big if it:
 
-- breaks something listed under the plan's Assumptions
-- changes the plan's Goal
+- breaks something listed under the original plan's Assumptions
+- changes the original plan's Goal
 - changes a Contract that other code or people already depend on
 - reworks most of the tasks, or a lot of code that's already built
 
 If any of these apply, tell the user what you found and why it looks bigger than a patch, then let them decide how to proceed. Don't start other skills yourself, and don't push on without their answer.
 
-## Step 4 — Confirm the change
+## Step 4 — Write the correction plan, then stop
 
-Before editing anything, give the user a short summary:
+Use the same structure and rules as `writing-plans` (Contract, Approach, database changes, flagged concurrency decisions, plain English, no code), but write only what changes. Get the real date and time from the system (e.g. `date +%Y-%m-%d-%H%M`), and save to:
 
-- what kind of correction this is, in one sentence
-- what will change in the plan, by task
-- which test-plan IDs will be changed, added, or removed
-- whether code will need to change
+```
+plans/<YYYY-MM-DD-HHmm>-<slug>.md
+```
 
-Then stop and wait. A misread correction would spread through every layer, and this is the cheapest place to catch it. Keep this to a few lines, since the correction is meant to be small. If the user already told you to go straight through, skip the wait and just show the summary.
+`<slug>` names the correction, such as `fix-retry-duplicate-handling`.
 
-## Step 5 — Update the plan and test plan
+```markdown
+# Correction: <short title>
+Corrects: plans/<original-plan>.md
 
-Edit the existing files in place, and don't create new ones. Each file should read as the current truth, not as a history of changes, so don't add "changed from X" notes. Git keeps the history.
+Earlier corrections: plans/<earlier-correction>.md (only if there are any)
 
-Follow the formats those files already use. Keep the plan in plain English and write each test case as numbered steps ending in a `Result:` line.
+## Overview
+What was wrong and why this correction is needed, in plain language.
 
-Keep test-plan IDs stable, because test code refers to them:
+## Goal
+What is true once the correction is in.
 
-- **Same scenario, new expectation** — keep the ID and edit the test case.
-- **New scenario** — use the next unused number in that task.
-- **Removed scenario** — delete the test case and leave a gap in the numbering. Never renumber or reuse an ID.
+## Tasks
 
-## Step 6 — Update the tests and confirm they fail
+### Task N: <short task name>
+**Changes:** one line saying how this relates to the original, for example "replaces the Contract of original Task 2", "amends step 3 of the Workflow of original Task 3", or "new".
 
-Change the test code to match, keeping one test per test-plan ID and carrying the ID over, as the existing tests do. Delete the test for any removed ID.
+**Goal:** what this task achieves.
 
-Run the changed tests before touching the code. Each one that describes new or corrected behavior should fail, because the behavior isn't there yet. Check the reason: a typo or broken setup isn't a meaningful failure, so fix the test first.
+**Contract / Approach / Workflow:** only the ones that change, in the same formats as `writing-plans`.
 
-If a test passes when it should fail, stop before writing any code. Either the behavior already exists and the correction may be unnecessary, or the test isn't exercising what it claims to. Tell the user which it looks like.
+## Unchanged
+Everything in the original plan that isn't listed above stays as it is.
 
-## Step 7 — Change the code and confirm it passes
+## Out of scope
+- ...
+```
 
-Write just enough code to make those tests pass, matching how the surrounding code is organized. Stay inside the correction: anything else you notice goes in your report, not in this change.
+Number the correction's tasks from the next number after the highest task number used in the original plan and any earlier corrections (original has Tasks 1-4, so the correction starts at Task 5). Then the test-plan IDs stay unique across the whole chain, and test code that carries an ID never collides.
 
-Then run the full test suite, not only the changed tests. A correction can break behavior that other tasks rely on. If a test outside the correction fails, treat it as a regression and look into it. Don't edit that test to make it pass unless the correction really does change what it should expect, and if it does, the plan and test plan need to say so too.
+Put a blank line between every field and before and after every list or table.
 
-If the tests are still failing, read the failure and diagnose it before changing anything else. After 2-3 diagnosed attempts, stop and report what's failing and what you've ruled out.
+Tell the user where it was saved, with a short recap. Then **stop and wait for approval**. This plan is where the user confirms the correction was understood correctly.
 
-## Step 8 — Report and stop
+## Step 5 — Write the correction test plan, then stop
+
+Once the plan is approved, follow `writing-test-plan` for the structure, the case format, and the rules on merging cases and on cases that come from the Approach, but cover only the correction's tasks. Use the same timestamp and slug as the correction plan:
+
+```
+plans/<YYYY-MM-DD-HHmm>-<slug>-test-plan.md
+```
+
+```markdown
+# Test Plan: <correction title>
+Plan: plans/<same-timestamp>-<same-slug>.md
+
+Corrects: plans/<original-test-plan>.md
+
+## How to run and observe
+Same as the original test plan, or only what differs.
+
+## Removed or replaced
+| Original ID | What happens | Why |
+|-------------|--------------|-----|
+| 2.3 | replaced by 5.1 | ... |
+| 2.4 | removed | ... |
+
+## Still must hold
+Original IDs that stay valid but sit close to the change, so they get checked again. IDs only, no copying of their content.
+- 2.1, 2.2
+
+## Task 5: <task name, matching the correction plan>
+
+### 5.1 <case title>
+...
+```
+
+Leave out `Removed or replaced` and `Still must hold` when they have nothing in them. Don't edit the original test plan, and don't reuse or renumber an original ID.
+
+Then **stop and wait for approval**, as `writing-test-plan` does.
+
+## Step 6 — Build and verify, on its own
+
+Once the test plan is approved, run the same loop as `feature-development`: `test-driven-development` and `verify-change` over each task in the correction plan, without stopping between tasks. The stop conditions are the ones `test-driven-development` lists.
+
+Two things are specific to a correction:
+
+- The tests for IDs under `Removed or replaced` get deleted or replaced, so no test is left guarding behavior that was dropped.
+- Run the whole test suite, not only the new tests, because a correction can break behavior other tasks rely on. A failure outside the correction is a regression to look into. Don't edit that test to make it pass unless the correction really does change what it should expect, and if it does, the correction plan and test plan need to say so.
+
+## Step 7 — Report and stop
 
 Tell the user:
 
-- what changed in each layer: plan, test plan, tests, and code
-- which test-plan IDs now pass, and the result of the full suite
+- where the correction plan, test plan, and verification file are
+- which test-plan IDs pass, including the `Still must hold` ones, and the result of the full test suite
 - anything you noticed but left alone
 
-Don't commit unless asked.
+Anything unrelated that you notice goes in this report, not in the change. Don't commit unless asked.

@@ -1,13 +1,15 @@
 ---
 name: writing-plans
-description: Use this once the problem is understood (typically right after a discovery/mental-model step) and it's time to turn it into a concrete plan before writing any code. Produces a short, plain-English plan file — overview, goals, a single list of database changes (when there are any) mapped to the tasks that need them, a task breakdown with a goal and workflow per task, and an explicit out-of-scope list — saved to plans/ so it can be reviewed and later followed by an execution step. Trigger for "let's plan this out", "break this into tasks", "write a plan for X", or any multi-step coding work about to start. Do NOT use for a single, obvious, one-step change — planning ceremony for a one-line fix just adds friction.
+description: Use this once the problem is understood (typically right after a discovery/mental-model step) and it's time to turn it into a concrete plan before writing any code. Produces a short, plain-English plan file — overview, goals, a single list of database changes (when there are any) mapped to the tasks that need them, a task breakdown with a goal, a technical approach (the mechanisms chosen, such as sync vs async, REST vs gRPC, queue vs event emitter) and a workflow per task, and an explicit out-of-scope list — saved to plans/ so it can be reviewed and later followed by an execution step. Trigger for "let's plan this out", "break this into tasks", "write a plan for X", or any multi-step coding work about to start. Do NOT use for a single, obvious, one-step change — planning ceremony for a one-line fix just adds friction.
 ---
 
 # Writing Plans
 
 ## What this is for
 
-A plan exists so that before anyone writes a line of code, both you and the user agree on *what* is going to be built and in *what order* — not on the exact implementation. A plan full of function signatures and code snippets is really a first draft of the implementation wearing a plan's clothes; it's slower to review, harder to change your mind about, and it hides the one thing a plan should make obvious: the shape of the work. Keep every part of the plan in plain English. The "how" comes later, when the plan is actually executed.
+A plan exists so that before anyone writes a line of code, both you and the user agree on *what* is going to be built, in *what order*, and by *which technical mechanisms* — not on the exact code. A plan full of function signatures and code snippets is really a first draft of the implementation wearing a plan's clothes; it's slower to review, harder to change your mind about, and it hides the one thing a plan should make obvious: the shape of the work. Keep every part of the plan in plain English.
+
+There are two kinds of "how", and they belong in different places. The *mechanism* — does this call run synchronously or asynchronously, over REST or gRPC, through a queue or an in-process event — is the decision most worth the user's review, because a wrong choice here (a polling timer where a queue was available) is expensive to unwind and invisible in a diff. That goes in each task's **Approach**. The *code-level* how — function internals, exact library calls — comes later, when the plan is executed.
 
 ## Before writing the plan
 
@@ -49,6 +51,8 @@ Things this plan takes for granted — if one of these turns out to be false, th
 **Database:** (only when this task touches a change listed above) the D-numbers, each marked creates / reads / writes / relies on.
 
 **Contract:** (only when this task creates or changes something other code/people will call) the input/output shape of that boundary.
+
+**Approach:** (only when the task involves a real technical choice: talking to another service, deferred or repeated work, where state lives, failure handling, a new dependency) the mechanisms chosen, one line each, with the reason and the alternative that was rejected.
 
 **Workflow:**
 1. First plain-English step of what gets built/changed.
@@ -98,6 +102,40 @@ Good:
 Bad (this is now describing internals, not the boundary):
 > **Contract:** Calls `RetryPolicy.schedule()` which pushes onto the `retry_queue` Redis list with a computed TTL...
 
+How the retry gets scheduled is a real decision, but it goes under the task's Approach (see below), not in the Contract.
+
+### Writing a task's Approach
+
+The Approach is where the technical solution gets decided *before* code exists, so the user can review it. Without it, an agent fills the gap by copying whatever the nearest existing code does, which is how a polling `setInterval` ends up in a codebase that already has a job queue.
+
+Only add an Approach to a task that involves a real mechanism choice. A task that adds a field to a form, or renames something, has none — leave the line out rather than writing "N/A". Cover only the decisions the task actually involves, drawn from:
+
+- **Talking to another service or component:** sync or async; REST, gRPC, or another protocol; request/response or event; what the caller does while it waits.
+- **Deferred or repeated work:** a queue or job runner, a scheduler or cron, an in-process timer, or an event emitter; what happens to the work if the process restarts; whether it can run twice.
+- **Where state lives:** database, cache, or memory; which component owns it.
+- **Failure handling:** timeout, retry, fallback, and what the caller sees when a dependency is down.
+- **Reuse:** which existing module, service, or library to use, versus building something new.
+- **New dependencies:** any new library, service, or infrastructure the task would add. Always call these out.
+
+**How to decide.**
+
+1. Look at how the codebase already does similar things, and at what's available to build on (a queue, a job runner, an event bus, a shared client). Existing code shows what's *available*, not what's *right*. Don't copy a pattern just because it's there, and don't ignore it either.
+2. If the best choice differs from what the nearby code does, say so in the Approach and give the reason. If the existing pattern looks flawed, flag it to the user instead of silently repeating it or silently diverging from it.
+3. When there's a real trade-off (cost, operational burden, latency, a new dependency), don't pick silently. Give the user two or three options with a recommendation and ask. When one choice is clearly right, just state it.
+
+**Format.** One line per decision: the choice, why, and what was rejected. Stay at the mechanism level.
+
+Good:
+> **Approach:**
+> - **Scheduling the retry:** put a delayed job on the existing job queue, so retries survive restarts and work across several instances. Considered an in-process timer; rejected because pending retries would be lost on restart.
+> - **Charging the card:** the job worker calls the payment provider synchronously with a timeout; on failure the job goes back on the queue.
+
+Bad — too vague to review:
+> **Approach:** use an appropriate async mechanism for the retry.
+
+Bad — this is code, not an approach:
+> **Approach:** call `queue.add('retry', { paymentId }, { delay: 5000 })` and handle it in `RetryProcessor.process()`.
+
 ### Flag concurrency and data-integrity decisions while planning
 
 Some tasks touch things that go wrong in ways that are easy to miss until code already exists: a resource more than one request could act on at the same time, an action that might get triggered twice for what should be a single effect (a retried request, a redelivered webhook), or a step that only makes sense if several writes succeed or fail together. These are business decisions, not implementation details — whether a duplicate retry gets silently ignored or rejected outright changes what the API *is*, not just how it's coded. Deciding it now, with the user, is cheaper than leaving it for whoever implements the task to guess.
@@ -112,7 +150,7 @@ Most tasks are none of these — a task that reads one row once has nothing to f
 
 ### Writing a task's Workflow
 
-The workflow is the sequence of what gets built, not how. Naming a specific file, class, or module is fine when it helps locate the work (e.g. "add a retry check in the payment handler") — but stop there. Don't describe the internals of a function, the exact library call, or a code snippet; that's implementation, and belongs to the execution step, not the plan.
+The workflow is the sequence of what gets built, not how. Naming a specific file, class, or module is fine when it helps locate the work (e.g. "add a retry check in the payment handler") — but stop there. Don't describe the internals of a function, the exact library call, or a code snippet; that's implementation, and belongs to the execution step, not the plan. Mechanism choices (queue, protocol, sync or async) belong in the task's Approach, not buried inside workflow steps, and the workflow should follow whatever the Approach decided.
 
 Good:
 > 1. Add a check before charging that looks up whether this payment already has a pending retry.

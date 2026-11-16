@@ -2,21 +2,22 @@
 
 A personal Claude Code and Codex skill kit for programming work — built to replace the `superpowers` plugin.
 
-Five skills chained together, plus two standalone skills you run on demand.
+Six skills chained together, plus two standalone skills you run on demand.
 
 ## The chain
 
 - `feature-development` — entry point. Figures out whether a request is new work or a continuation of something already in progress, then routes into the rest.
 - `discovery` — clarifies an ambiguous request: confirms where to look for missing context, then reports back a plain-English mental model before any technical detail.
-- `writing-plans` — turns an understood problem into a short plan (`plans/<timestamp>-<slug>.md`): overview, goal, assumptions, per-task goal/contract/workflow, out of scope.
+- `writing-plans` — turns an understood problem into a short plan (`plans/<timestamp>-<slug>.md`): overview, goal, assumptions, per-task goal/contract/approach/workflow, out of scope. The per-task approach records the technical mechanism chosen (sync vs async, REST vs gRPC, queue vs event emitter, what to reuse) so you can review it before any code exists.
 - `writing-test-plan` — turns an approved plan into a plain-English test plan (`plans/<timestamp>-<slug>-test-plan.md`), one concrete step-by-step scenario per test case.
-- `test-driven-development` — implements from the test plan: red → green → refactor, tests traceable to test-plan IDs, code placed in the right architectural layer (business vs infrastructure), with a checklist for concurrency/scale correctness (N+1, race conditions, atomicity, consistency, idempotency, timeouts, unbounded queries, authorization).
+- `test-driven-development` — implements from the test plan: red → green → refactor, tests traceable to test-plan IDs, code placed in the right architectural layer (business vs infrastructure), with a checklist for concurrency/scale correctness (N+1, race conditions, atomicity, consistency, idempotency, timeouts, unbounded queries, authorization). It follows the plan's approach, and once the test plan is approved it keeps going task by task on its own.
+- `verify-change` — runs after each task. Independently carries out each test-plan case against the real running system through its real interface, and saves evidence per case (pass / fail / not verified) to `plans/<timestamp>-<slug>-verification.md`, which is what you review instead of the diff.
 
 ## On demand
 
 These aren't part of the chain and Claude won't start them by itself. Run them when you need them:
 
-- `/groundwork:course-correct` — carries a small correction through every layer it touches (plan, test plan, tests, then code), so they all still agree without restarting the whole process.
+- `/groundwork:course-correct` — for a small correction to work that already has a plan. Leaves the original plan and test plan untouched and writes a short correction plan and correction test plan that point back to them and cover only what changes. You approve the plan, then the test plan, and then implementation and verification run on their own, the same as `feature-development`.
 - `/groundwork:role-play-testing` — plays the system's real actors against a running local or staging system, then writes a findings report (`role-play-reports/<timestamp>-<slug>.md`). It reports only and never fixes anything.
 
 ## Install on a new machine
@@ -69,6 +70,7 @@ plugins/groundwork/
     writing-plans/SKILL.md
     writing-test-plan/SKILL.md
     test-driven-development/SKILL.md
+    verify-change/SKILL.md
     course-correct/SKILL.md
     role-play-testing/SKILL.md
 ```

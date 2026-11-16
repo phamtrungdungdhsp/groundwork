@@ -15,7 +15,9 @@ A test case earns its place here only if someone could read it and go run it by 
 
 ## Before writing the test plan
 
-You need an approved plan (from `writing-plans`) to work from — read the plan file in `plans/`. Each task's Goal, Contract (if it has one), and Workflow are what test cases are derived from: the Goal says what should end up being true, the Contract (when present) pins down the exact boundary behavior including its error cases, and the Workflow hints at what could go wrong at each step.
+You need an approved plan (from `writing-plans`) to work from — read the plan file in `plans/`. Each task's Goal, Contract (if it has one), Approach (if it has one), and Workflow are what test cases are derived from: the Goal says what should end up being true, the Contract (when present) pins down the exact boundary behavior including its error cases, the Approach (when present) names the mechanisms chosen and so what can go wrong with them, and the Workflow hints at what could go wrong at each step.
+
+If a task clearly involves a mechanism choice (calling another service, deferred work, a queue) but the plan has no Approach for it, don't invent one to test against. Tell the user the plan is missing it and go back to `writing-plans` first.
 
 ## Structure
 
@@ -24,6 +26,16 @@ One test-plan file per plan, organized by the same tasks:
 ```markdown
 # Test Plan: <Plan title>
 Plan: plans/<same-timestamp>-<same-slug>.md
+
+## How to run and observe
+
+**Environment:** <local or staging, and how to start or reach it>
+
+**Accounts and data:** <which test accounts and seed data to use>
+
+**Where to see results:** <responses, a stubbed inbox, logs, a read-only view of the database or queue>
+
+**Waiting and time:** <how a time-based case gets triggered without really waiting, when any case depends on time>
 
 ## Task 1: <task name, matching the plan>
 
@@ -61,9 +73,32 @@ Result: ...
 
 Number test cases `<task number>.<test number>` so they can be referenced unambiguously later (e.g. "test 2.1 is still failing"). `Result:` is always the last line of the Workflow, never a separate field — reading the whole numbered list top to bottom should feel like one continuous scenario ending in an outcome, not a setup paragraph followed by a separate verdict.
 
+### Writing "How to run and observe"
+
+Once the test plan is approved, implementation and verification run on their own, and the verification step has to run the real system and look at what happened. If that isn't written down, someone has to ask mid-way, which stops the whole loop. So settle it here, where the user is already reviewing:
+
+- **Environment:** local or staging, and the command or address to reach it. Never production.
+- **Accounts and data:** which test accounts and seed data exist, and what's missing and needs creating.
+- **Where to see results:** how to read what the system did. If the task sends email, SMS or payments, say that they go to a stub or test mode, and where to look at them.
+- **Waiting and time:** if any case depends on time (a reminder after 24 hours, an expiry, a retry delay), say how it gets triggered without really waiting: a configurable delay, a test clock, or seed data with timestamps already in the past. Choose a way that doesn't change the code under test. If the system has no such way, say so and ask the user how to handle it before finishing the test plan.
+
+Find these out from the project (README, scripts, existing config) first. Only ask the user for what you can't find. A project with nothing to run, such as a library, says how it gets exercised instead (an example script, a REPL call). Keep the section short and factual. Don't pad it.
+
 ### Choosing test cases per task
 
 For each task, cover at minimum: the happy path (the thing working as intended), and any edge or error case that the task's Goal, Contract, or Workflow implies matters. A task with a Contract almost always needs one test case per distinct response in that contract — if the contract says "409 if a retry is already pending," that's its own error-case test, not a footnote on the happy-path test. A task with no Contract still needs at least the happy path, plus whatever edge cases are obvious from its Goal.
+
+### Cases that come from the Approach
+
+A chosen mechanism has behavior the user can observe, and that behavior is part of what "correct" means. When a task has an Approach, add test cases for the observable consequences of each decision, for example:
+
+- **Async or queued work:** the caller gets its response before the work finishes; the work does complete afterwards; a failed job is retried; the same job delivered twice produces one effect; pending work isn't lost when the process restarts.
+- **Calling another service:** what the caller sees when that service is slow, times out, or is down; whether anything is left half-done.
+- **Where state lives:** the state is still there after a restart, or visible from a second instance, if the Approach relies on that.
+
+Test these through what the system shows (responses, stored records, logs, an admin view), not through the mechanism's internals. "The queue's `add` method was called" belongs to test code and ties the test to one implementation. "The retry happens after the delay, and only once" is what the reader cares about, and it still holds if the mechanism changes.
+
+These cases also catch an agent that quietly swaps in a different mechanism: an in-process timer would fail the "pending work survives a restart" case, so the test plan holds the implementation to the Approach the user approved.
 
 Group cases that share a scenario as described in "Keeping the list short" below. Don't pad the list with test cases that don't correspond to anything in the task — every test case should trace back to something the Goal, Contract, or Workflow actually implies needs to hold.
 

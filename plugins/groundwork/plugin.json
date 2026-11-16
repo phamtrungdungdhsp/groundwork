@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "groundwork",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Discovery, planning, test-plan, and TDD workflow for programming — a personal replacement for the superpowers plugin.",
   "author": {
     "name": "Dũng"

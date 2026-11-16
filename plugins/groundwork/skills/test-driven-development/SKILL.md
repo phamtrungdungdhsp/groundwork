@@ -11,7 +11,7 @@ This is where the test plan and the plan finally become real code. Two things ca
 
 ## Before starting
 
-You need an approved test plan (from `writing-test-plan`) and the plan it came from (for the Contract details). Work through one task at a time, in the order the plan lists them.
+You need an approved test plan (from `writing-test-plan`) and the plan it came from (for the Contract and Approach details). Work through one task at a time, in the order the plan lists them.
 
 ## Step 1 — Discover the project's actual architecture
 
@@ -51,6 +51,8 @@ Translate the test case directly: its numbered setup/action steps become the arr
 
 Once a task's tests are all written, cross-check them against that task's section of the test plan: every test-plan ID has exactly one test, and no test exists that doesn't trace back to an ID. If you believe an extra test is genuinely needed, say so and ask rather than adding it silently — the test plan is the agreed contract for this step.
 
+When the test plan comes from `course-correct`, its `Removed or replaced` table lists original IDs whose tests must be deleted or replaced, so don't leave a test guarding behavior the correction dropped. Tests for IDs in `Still must hold` stay as they are and must stay green.
+
 ## Step 4 — Confirm red
 
 Run the tests you just wrote, before any implementation exists. Every one of them should fail — and it matters *why*:
@@ -61,7 +63,11 @@ Run the tests you just wrote, before any implementation exists. Every one of the
 
 ## Step 5 — Implement, minimally, in the right place
 
-Write just enough code to make the currently-red tests pass — resist building beyond what the test plan actually requires. Place each piece of logic using the Step 2 heuristic and the layout discovered in Step 1: business rules in the application/business layer, technical mechanics in infrastructure, with infrastructure depending on interfaces the application layer defines.
+Write just enough code to make the currently-red tests pass — resist building beyond what the test plan actually requires.
+
+**Follow the plan's Approach.** If the task has an Approach, implement it as written: the sync or async choice, the protocol, the queue, the components to reuse. Don't substitute a different mechanism because nearby code does something else, or because it's quicker (a polling timer where the plan says a queue). If you find the Approach can't work once you're looking at real code, stop and tell the user what you found. Don't quietly switch to another one.
+
+Place each piece of logic using the Step 2 heuristic and the layout discovered in Step 1: business rules in the application/business layer, technical mechanics in infrastructure, with infrastructure depending on interfaces the application layer defines.
 
 ### Watch for these classes of bugs while implementing
 
@@ -97,4 +103,13 @@ If a refactor step turns a test red, don't iterate on it trying to force it back
 
 ## Between tasks
 
-After a task goes green (and any refactor is done), report which test-plan IDs are now passing and stop before moving to the next task. This keeps the same rhythm as the rest of the plan: each task is a checkpoint, not something to blow through on the way to "done."
+After a task goes green (and any refactor is done), run `verify-change` for that task. It checks the finished work independently against the test plan, through the real system, and saves the evidence.
+
+Once the test plan is approved, keep going on your own: if verification passes, move straight to the next task without waiting for the user. Stop and report only when:
+
+- verification still fails after the 2-3 diagnosed attempts,
+- the test plan looks wrong, or its "How to run and observe" doesn't work (don't edit it yourself),
+- the Approach can't be followed, or a decision the plan flagged needs the user,
+- or every task is done and verified.
+
+At the end, point the user to the verification file as the thing to review.
