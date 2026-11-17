@@ -17,6 +17,7 @@ Six skills chained together, plus two standalone skills you run on demand.
 
 These aren't part of the chain and Claude won't start them by itself. Run them when you need them:
 
+- `/groundwork:pair-planning` — an alternative to the `discovery` → `writing-plans` → `writing-test-plan` steps, for when you want to shape the plan yourself. You talk the problem through with Claude, then say what the tasks are, what each does and which test cases it needs. Claude acts as a peer: it gives its own view, drafts one piece when you're unsure, and writes each agreed piece straight into the plan and test plan files, without rewriting what you already agreed. It produces the same two files as the chain, so you approve once and `test-driven-development` and `verify-change` take over.
 - `/groundwork:course-correct` — for a small correction to work that already has a plan. Leaves the original plan and test plan untouched and writes a short correction plan and correction test plan that point back to them and cover only what changes. You approve the plan, then the test plan, and then implementation and verification run on their own, the same as `feature-development`.
 - `/groundwork:role-play-testing` — plays the system's real actors against a running local or staging system, then writes a findings report (`role-play-reports/<timestamp>-<slug>.md`). It reports only and never fixes anything.
 
@@ -71,6 +72,7 @@ plugins/groundwork/
     writing-test-plan/SKILL.md
     test-driven-development/SKILL.md
     verify-change/SKILL.md
+    pair-planning/SKILL.md
     course-correct/SKILL.md
     role-play-testing/SKILL.md
 ```
