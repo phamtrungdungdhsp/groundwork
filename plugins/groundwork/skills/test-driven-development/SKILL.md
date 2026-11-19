@@ -65,7 +65,7 @@ Run the tests you just wrote, before any implementation exists. Every one of the
 
 Write just enough code to make the currently-red tests pass — resist building beyond what the test plan actually requires.
 
-**Follow the plan's Approach.** If the task has an Approach, implement it as written: the sync or async choice, the protocol, the queue, the components to reuse. Don't substitute a different mechanism because nearby code does something else, or because it's quicker (a polling timer where the plan says a queue). If you find the Approach can't work once you're looking at real code, stop and tell the user what you found. Don't quietly switch to another one.
+**Follow the plan's Approach.** The Approach is the task's Decisions and Rules. If the task has them, implement them as written: the sync or async choice, the protocol, the queue, the components to reuse. Don't substitute a different mechanism because nearby code does something else, or because it's quicker (a polling timer where the plan says a queue). If you find the Approach can't work once you're looking at real code, stop and tell the user what you found. Don't quietly switch to another one.
 
 Place each piece of logic using the Step 2 heuristic and the layout discovered in Step 1: business rules in the application/business layer, technical mechanics in infrastructure, with infrastructure depending on interfaces the application layer defines.
 

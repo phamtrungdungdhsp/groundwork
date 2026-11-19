@@ -15,7 +15,7 @@ A test case earns its place here only if someone could read it and go run it by 
 
 ## Before writing the test plan
 
-You need an approved plan (from `writing-plans`) to work from — read the plan file in `plans/`. Each task's Goal, Contract (if it has one), Approach (if it has one), and Workflow are what test cases are derived from: the Goal says what should end up being true, the Contract (when present) pins down the exact boundary behavior including its error cases, the Approach (when present) names the mechanisms chosen and so what can go wrong with them, and the Workflow hints at what could go wrong at each step.
+You need an approved plan (from `writing-plans`) to work from — read the plan file in `plans/`. Each task's Goal, Contract (if it has one), Approach (if it has one), and Workflow are what test cases are derived from: the Goal says what should end up being true, the Contract (when present) pins down the exact boundary behavior including its error cases, the Approach (when present, written as Decisions and Rules) names the mechanisms chosen and the invariants, and so what can go wrong with them, the Scenario shows the real situation the task is for and is a good source for the happy-path case, and the Workflow hints at what could go wrong at each step.
 
 If a task clearly involves a mechanism choice (calling another service, deferred work, a queue) but the plan has no Approach for it, don't invent one to test against. Tell the user the plan is missing it and go back to `writing-plans` first.
 

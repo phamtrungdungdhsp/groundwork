@@ -70,7 +70,7 @@ What is true once the correction is in.
 
 **Goal:** what this task achieves.
 
-**Contract / Approach / Workflow:** only the ones that change, in the same formats as `writing-plans`.
+**Scenario / Depends on / Contract / Decisions / Rules / Workflow:** only the ones that change, in the same formats as `writing-plans`. Always include a Scenario that says what was wrong before and what is true after.
 
 ## Unchanged
 Everything in the original plan that isn't listed above stays as it is.

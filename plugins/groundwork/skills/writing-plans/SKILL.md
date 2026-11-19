@@ -1,6 +1,6 @@
 ---
 name: writing-plans
-description: Use this once the problem is understood (typically right after a discovery/mental-model step) and it's time to turn it into a concrete plan before writing any code. Produces a short, plain-English plan file — overview, goals, a single list of database changes (when there are any) mapped to the tasks that need them, a task breakdown with a goal, a technical approach (the mechanisms chosen, such as sync vs async, REST vs gRPC, queue vs event emitter) and a workflow per task, and an explicit out-of-scope list — saved to plans/ so it can be reviewed and later followed by an execution step. Trigger for "let's plan this out", "break this into tasks", "write a plan for X", or any multi-step coding work about to start. Do NOT use for a single, obvious, one-step change — planning ceremony for a one-line fix just adds friction.
+description: Use this once the problem is understood (typically right after a discovery/mental-model step) and it's time to turn it into a concrete plan before writing any code. Produces a short, plain-English plan file — an overview that tells the story (how it works before and after) with a glossary, goals, a single list of database changes (when there are any) mapped to the tasks that need them, a task breakdown where each task has a concrete scenario, a goal, what it depends on, the decisions and rules (the mechanisms chosen, such as sync vs async, REST vs gRPC, queue vs event emitter) and a workflow, open rollout questions, and an explicit out-of-scope list — saved to plans/ so it can be reviewed and later followed by an execution step. Trigger for "let's plan this out", "break this into tasks", "write a plan for X", or any multi-step coding work about to start. Do NOT use for a single, obvious, one-step change — planning ceremony for a one-line fix just adds friction.
 ---
 
 # Writing Plans
@@ -9,7 +9,7 @@ description: Use this once the problem is understood (typically right after a di
 
 A plan exists so that before anyone writes a line of code, both you and the user agree on *what* is going to be built, in *what order*, and by *which technical mechanisms* — not on the exact code. A plan full of function signatures and code snippets is really a first draft of the implementation wearing a plan's clothes; it's slower to review, harder to change your mind about, and it hides the one thing a plan should make obvious: the shape of the work. Keep every part of the plan in plain English.
 
-There are two kinds of "how", and they belong in different places. The *mechanism* — does this call run synchronously or asynchronously, over REST or gRPC, through a queue or an in-process event — is the decision most worth the user's review, because a wrong choice here (a polling timer where a queue was available) is expensive to unwind and invisible in a diff. That goes in each task's **Approach**. The *code-level* how — function internals, exact library calls — comes later, when the plan is executed.
+There are two kinds of "how", and they belong in different places. The *mechanism* — does this call run synchronously or asynchronously, over REST or gRPC, through a queue or an in-process event — is the decision most worth the user's review, because a wrong choice here (a polling timer where a queue was available) is expensive to unwind and invisible in a diff. That goes in each task's **Decisions** (and **Rules**, see below), which together are the task's Approach. The *code-level* how — function internals, exact library calls — comes later, when the plan is executed.
 
 ## Before writing the plan
 
@@ -23,7 +23,13 @@ Every plan follows this shape:
 # <Plan title>
 
 ## Overview
-A few sentences: what this plan is for and why, in plain language.
+The story in plain language: how things work today, what goes wrong or is missing, and what this plan changes. Use one concrete example (a named person, machine or request), not abstract wording.
+
+## How it works
+(skip for a small plan) A short before → after sketch of the main flow, for example two small arrows or a few lines, so a reader who doesn't know the system can see what moves.
+
+## Glossary
+(skip when every term is already common knowledge) Each domain term, acronym or internal name the plan uses, with a one-line plain meaning.
 
 ## Goal
 The overall outcome this plan needs to achieve. What does "done" look like, described as an outcome — not a list of steps.
@@ -45,25 +51,44 @@ Things this plan takes for granted — if one of these turns out to be false, th
 
 ## Tasks
 
+Task order: Task 1 → Task 2 → ... (one line, only if dependencies aren't a simple chain, say so here).
+
 ### Task 1: <short task name>
+
+**Scenario:** a short concrete story of this task in use: who or what does what, what happened before, what happens after.
+
 **Goal:** what this specific task achieves on its own.
+
+**Depends on:** the earlier tasks (or an outside condition) this one needs.
 
 **Database:** (only when this task touches a change listed above) the D-numbers, each marked creates / reads / writes / relies on.
 
 **Contract:** (only when this task creates or changes something other code/people will call) the input/output shape of that boundary.
 
-**Approach:** (only when the task involves a real technical choice: talking to another service, deferred or repeated work, where state lives, failure handling, a new dependency) the mechanisms chosen, one line each, with the reason and the alternative that was rejected.
+**Decisions:** (only when the task involves a real technical choice: talking to another service, deferred or repeated work, where state lives, failure handling, a new dependency, a rejected alternative) one line each: the choice, the reason, and the alternative that was rejected.
+
+**Rules:** (only when the task has invariants that must always hold) things that are always true after this task, with no alternative to weigh.
 
 **Workflow:**
+
 1. First plain-English step of what gets built/changed.
 2. Next step, in the order it should happen.
 3. ...
 
 ### Task 2: <short task name>
+
+**Scenario:** ...
+
 **Goal:** ...
 
+**Depends on:** ...
+
 **Workflow:**
+
 1. ...
+
+## Rollout and open questions
+(only when there are some) Things the plan can't answer yet or that matter when shipping, each marked `[open]` with the question: gaps while the change is live, rollback, ordering with other releases, and how to know when it is safe to remove a fallback.
 
 ## Out of scope
 - Things this plan deliberately does not cover, so no one — human or AI — quietly wanders into them mid-execution.
@@ -72,6 +97,19 @@ Things this plan takes for granted — if one of these turns out to be false, th
 **Formatting:** put a blank line between every field (`**Type:**`, `**Covers:**`, `**Workflow:**`, ...) and before/after each list or table. Markdown joins consecutive lines into one paragraph, so fields written on adjacent lines render run together on one line.
 
 List tasks in the order they should be done — the order in the list *is* the execution order, no separate dependency diagram needed. When the plan changes the database, the schema task comes first.
+
+### Writing the Overview, How it works and Glossary
+
+A reader who didn't take part in the discussion has to understand the plan from the page alone. So the Overview tells a story with one concrete example rather than listing mechanisms, and every term of the domain is explained the first time the reader needs it.
+
+- **Overview:** today's situation, what hurts or is missing, what changes. Name an example (Alice, the instance "api-prod", order #123) and reuse the same one in the task Scenarios.
+- **How it works:** a before → after sketch for the main flow. Add it when the plan changes how several parts talk to each other; skip it for small plans.
+- **Glossary:** one line per term the reader may not know (domain words, acronyms, internal names, the old mechanism being replaced). Define a term only if it appears in the plan. If you inferred a meaning rather than read it, mark it `[confirm]` so the user checks it. Never guess silently.
+
+### Writing a task's Scenario, Depends on and rules for tasks
+
+- **Scenario:** two to four lines of a real situation, before and after if the task changes behavior. It is the first thing in the task because it answers "what is this about?" before any technical field. Reuse the plan's example. A task with no visible behavior (a migration) still gets one: say who or what is affected and how. Don't invent facts; if you aren't sure the flow works that way, mark it `[confirm]`.
+- **Depends on:** the earlier tasks this one needs, or an outside condition (a previous phase shipped). Put "none" only for the first task. It shows what can be built in parallel.
 
 ### Writing Assumptions
 
@@ -102,13 +140,20 @@ Good:
 Bad (this is now describing internals, not the boundary):
 > **Contract:** Calls `RetryPolicy.schedule()` which pushes onto the `retry_queue` Redis list with a computed TTL...
 
-How the retry gets scheduled is a real decision, but it goes under the task's Approach (see below), not in the Contract.
+How the retry gets scheduled is a real decision, but it goes under the task's Decisions (see below), not in the Contract.
 
-### Writing a task's Approach
+### Writing a task's Decisions and Rules (the Approach)
 
-The Approach is where the technical solution gets decided *before* code exists, so the user can review it. Without it, an agent fills the gap by copying whatever the nearest existing code does, which is how a polling `setInterval` ends up in a codebase that already has a job queue.
+Decisions and Rules together are the task's **Approach**: where the technical solution gets decided *before* code exists, so the user can review it. Without it, an agent fills the gap by copying whatever the nearest existing code does, which is how a polling `setInterval` ends up in a codebase that already has a job queue. The execution skills (`test-driven-development`, `verify-change`) and `writing-test-plan` read both fields as the Approach.
 
-Only add an Approach to a task that involves a real mechanism choice. A task that adds a field to a form, or renames something, has none — leave the line out rather than writing "N/A". Cover only the decisions the task actually involves, drawn from:
+The two fields are different in kind:
+
+- **Decisions** are choices where an alternative existed. Each has the choice, the reason, and what was rejected, ideally with the situation that made the reason matter ("keeping the copies was rejected: they still open with a leaked key").
+- **Rules** are invariants: things that must always be true and have no alternative to weigh ("the two keys are written in the same transaction, so they never disagree"). Compatibility statements ("accounts not touched keep the old data until it's removed") also go here.
+
+If you can't say what was rejected, it's a Rule, not a Decision. Keep the Workflow free of both: it only says what gets built, in order.
+
+Only add Decisions or Rules to a task that involves a real mechanism choice or invariant. A task that adds a field to a form, or renames something, has none: leave the lines out rather than writing "N/A". Cover only the decisions the task actually involves, drawn from:
 
 - **Talking to another service or component:** sync or async; REST, gRPC, or another protocol; request/response or event; what the caller does while it waits.
 - **Deferred or repeated work:** a queue or job runner, a scheduler or cron, an in-process timer, or an event emitter; what happens to the work if the process restarts; whether it can run twice.
@@ -120,21 +165,21 @@ Only add an Approach to a task that involves a real mechanism choice. A task tha
 **How to decide.**
 
 1. Look at how the codebase already does similar things, and at what's available to build on (a queue, a job runner, an event bus, a shared client). Existing code shows what's *available*, not what's *right*. Don't copy a pattern just because it's there, and don't ignore it either.
-2. If the best choice differs from what the nearby code does, say so in the Approach and give the reason. If the existing pattern looks flawed, flag it to the user instead of silently repeating it or silently diverging from it.
+2. If the best choice differs from what the nearby code does, say so in the Decisions and give the reason. If the existing pattern looks flawed, flag it to the user instead of silently repeating it or silently diverging from it.
 3. When there's a real trade-off (cost, operational burden, latency, a new dependency), don't pick silently. Give the user two or three options with a recommendation and ask. When one choice is clearly right, just state it.
 
 **Format.** One line per decision: the choice, why, and what was rejected. Stay at the mechanism level.
 
 Good:
-> **Approach:**
+> **Decisions:**
 > - **Scheduling the retry:** put a delayed job on the existing job queue, so retries survive restarts and work across several instances. Considered an in-process timer; rejected because pending retries would be lost on restart.
 > - **Charging the card:** the job worker calls the payment provider synchronously with a timeout; on failure the job goes back on the queue.
 
 Bad — too vague to review:
-> **Approach:** use an appropriate async mechanism for the retry.
+> **Decisions:** use an appropriate async mechanism for the retry.
 
 Bad — this is code, not an approach:
-> **Approach:** call `queue.add('retry', { paymentId }, { delay: 5000 })` and handle it in `RetryProcessor.process()`.
+> **Decisions:** call `queue.add('retry', { paymentId }, { delay: 5000 })` and handle it in `RetryProcessor.process()`.
 
 ### Flag concurrency and data-integrity decisions while planning
 
@@ -150,7 +195,7 @@ Most tasks are none of these — a task that reads one row once has nothing to f
 
 ### Writing a task's Workflow
 
-The workflow is the sequence of what gets built, not how. Naming a specific file, class, or module is fine when it helps locate the work (e.g. "add a retry check in the payment handler") — but stop there. Don't describe the internals of a function, the exact library call, or a code snippet; that's implementation, and belongs to the execution step, not the plan. Mechanism choices (queue, protocol, sync or async) belong in the task's Approach, not buried inside workflow steps, and the workflow should follow whatever the Approach decided.
+The workflow is the sequence of what gets built, not how. Naming a specific file, class, or module is fine when it helps locate the work (e.g. "add a retry check in the payment handler") — but stop there. Don't describe the internals of a function, the exact library call, or a code snippet; that's implementation, and belongs to the execution step, not the plan. Mechanism choices (queue, protocol, sync or async) belong in the task's Decisions and Rules, not buried inside workflow steps, and the workflow should follow whatever they decided. Don't repeat Decisions or Rules in the workflow as steps' explanations.
 
 Good:
 > 1. Add a check before charging that looks up whether this payment already has a pending retry.
@@ -163,6 +208,10 @@ Bad (this is implementation, not a plan):
 > 3. In `handle_webhook()`, call `retry_queue.delete(payment_id)` inside the `charge.succeeded` branch.
 
 If a task's workflow is ballooning into many steps that don't share one clear goal, that's usually a sign it's actually two tasks — split it. A task should be small enough that "is this task done?" has an obvious yes/no answer.
+
+### Writing Rollout and open questions
+
+Use this section for what the plan can't settle by itself but the reader must see: a stretch of time where something is unavailable while the change is live, how to roll back once data has been deleted, what has to ship together with another release, and what measurable condition says it is safe to remove a temporary fallback. Write each as a question marked `[open]` and say what depends on the answer. Don't answer them silently, and skip the section when there are none.
 
 ## Saving the plan
 
